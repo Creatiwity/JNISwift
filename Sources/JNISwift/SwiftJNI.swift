@@ -1,4 +1,5 @@
 import CJNI
+import Dispatch
 
 public var jni: JNI! // this gets set "OnLoad" so should always exist
 
@@ -11,7 +12,15 @@ public func JNI_OnLoad(jvm: UnsafeMutablePointer<JavaVM?>, reserved: UnsafeMutab
 
     jni = localJNI // set the global for use elsewhere
 
+    #if os(Android)
+        DispatchQueue.setThreadDetachCallback(JNI_DetachCurrentThread)
+    #endif
+
     return JNI_VERSION_1_6
+}
+
+public func JNI_DetachCurrentThread() {
+    jni._jvm.pointee?.pointee.DetachCurrentThread(jni._jvm)
 }
 
 extension jboolean : BooleanLiteralConvertible {
@@ -133,7 +142,7 @@ extension JNI {
 
 /**
  Allows a (Void) Java method to be called from Swift. Takes a global jobj (a class instance), a method name and its signature. The resulting callback can be called via javaCallback.call(param1, param2...), or javaCallback.apply([params]). Each param must be a jvalue.
- 
+
  Needs more error checking and handling. The basis is there, but from memory I had issues with either the optional or the throwing on Android.
 */
 public struct JavaCallback {
@@ -149,7 +158,7 @@ public struct JavaCallback {
     /// - __InvalidParameters__: One character per method parameter is required. For example, with a methodSignature of "(FF)V", you need to pass two floats as parameters.
     /// - __InvalidMethod__: Couldn't get the requested method from the jobject provided (are you calling with the right jobject instance / calling on the correct class?)
     /// - __IncorrectMethodSignature__: The JNI is separated into Java method calls to functions with various return types. So if you perform `callJavaMethod`, you need to accept the return value with the corresponding type. *XXX: currently only Void methods are implemented*.
-    
+
     enum JavaError: Error {
         case JNINotReady
         case InvalidParameters
@@ -213,4 +222,3 @@ public struct JavaCallback {
         self.apply(args: args)
     }
 }
-
