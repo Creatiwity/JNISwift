@@ -14,3 +14,7 @@ let package = Package(
     ]
 )
 ```
+
+## Credits
+
+This repository is a portage to Swift 4 of the original lib https://github.com/SwiftAndroid/swift-jni made by Geordie J.
